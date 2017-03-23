@@ -84,6 +84,15 @@ describe(
 			'.getValue()',
 			function() {
 				it(
+					'should fail',
+					function() {
+						optionsField = createOptionsField();
+
+						assert.fail('Failling on purpose.');
+					}
+				);
+
+				it(
 					'should return an array of values based on options values and keys',
 					function(done) {
 						optionsField = createOptionsField(
