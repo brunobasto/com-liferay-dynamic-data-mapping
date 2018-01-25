@@ -113,6 +113,14 @@ public class DDMFormTestUtil {
 		return createTextDDMFormField(name, true, false, false);
 	}
 
+	public static DDMFormField createNumericDDMFormField(
+		String name, boolean localizable, boolean repeatable, String dataType,
+		boolean required) {
+
+		return createDDMFormField(
+			name, name, "numeric", dataType, localizable, repeatable, required);
+	}
+
 	public static DDMFormField createSeparatorDDMFormField(
 		String name, boolean repeatable) {
 

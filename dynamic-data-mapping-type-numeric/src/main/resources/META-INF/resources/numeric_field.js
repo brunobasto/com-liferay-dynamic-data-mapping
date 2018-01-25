@@ -27,6 +27,13 @@ AUI.add(
 						value: ''
 					},
 
+					symbols: {
+						value: {
+							decimalSeparatorSymbol: '.',
+							groupSeparatorSymbol: ','
+						}
+					},
+
 					type: {
 						value: 'numeric'
 					}
@@ -40,8 +47,7 @@ AUI.add(
 					initializer: function() {
 						var instance = this;
 
-						instance.bindInputEvent('keypress', A.bind('_onNumericFieldKeyPress', instance));
-						instance.bindInputEvent('keyup', A.bind('_onNumericFieldKeyUp', instance));
+						instance.after('render', instance._afterNumericFieldRender, instance);
 
 						instance.evaluate = A.debounce(
 							function() {
@@ -98,28 +104,22 @@ AUI.add(
 						inputGroup.insert(container.one('.form-feedback-indicator'), 'after');
 					},
 
-					_onNumericFieldKeyPress: function(event) {
-						event = event || window.event;
-
-						var charCode = (typeof event.which == 'number') ? event.which : event.keyCode;
-
-						if (charCode < 32 || (charCode >= 48 && charCode <= 57) || charCode === 46) {
-							return true;
-						}
-
-						event.preventDefault();
-
-						return false;
-					},
-
-					_onNumericFieldKeyUp: function() {
+					_afterNumericFieldRender: function() {
 						var instance = this;
 
-						var value = String(instance.get('value'));
+						var symbols = instance.get('symbols');
 
-						var inputNode = instance.getInputNode();
+						var inputMask = new DDMNumeric.Inputmask(
+							'decimal',
+							{
+								groupSeparator: symbols.groupSeparatorSymbol,
+								radixPoint: symbols.decimalSeparatorSymbol
+							}
+						);
 
-						inputNode.val(value.replace(/[^0-9.]/g, ''));
+						inputMask.mask(instance.getInputNode().getDOM());
+
+						return instance;
 					}
 				}
 			}

@@ -3,15 +3,6 @@ AUI.add(
 	function(A) {
 		var isArray = Array.isArray;
 
-		var datePicker = new A.DatePicker(
-			{
-				popover: {
-					zIndex: Liferay.zIndex.TOOLTIP
-				},
-				trigger: '.liferay-ddm-form-field-date .trigger'
-			}
-		);
-
 		var DateField = A.Component.create(
 			{
 				ATTRS: {
@@ -40,14 +31,15 @@ AUI.add(
 					initializer: function() {
 						var instance = this;
 
-						instance._eventHandlers.push(
-							datePicker.after('selectionChange', A.bind('_afterSelectionChange', instance)),
-							datePicker.on('activeInputChange', A.bind('_onActiveInputChange', instance))
-						);
-
 						if (!instance.get('readOnly')) {
 							instance.bindContainerEvent('click', instance._onClickCalendar, '.input-group-addon');
 						}
+					},
+
+					destructor: function() {
+						var instance = this;
+
+						instance.datePicker.destroy();
 					},
 
 					formatDate: function(isoDate) {
@@ -84,6 +76,7 @@ AUI.add(
 							{
 								formattedValue: instance.formatDate(value),
 								predefinedValue: instance.formatDate(predefinedValue),
+								readOnly: false,
 								value: value
 							}
 						);
@@ -94,16 +87,67 @@ AUI.add(
 
 						var container = instance.get('container');
 
-						var triggerNode;
+						return container.one('.form-control');
+					},
 
-						if (instance.get('readOnly')) {
-							triggerNode = container.one('.trigger-readonly');
-						}
-						else {
-							triggerNode = container.one('.trigger');
+					hasFocus: function() {
+						var instance = this;
+
+						var datePicker = instance.datePicker;
+
+						var hasFocus = DateField.superclass.hasFocus.apply(instance, arguments);
+
+						if (datePicker.calendar) {
+							var calendarNode = datePicker.calendar.get('boundingBox');
+
+							hasFocus = hasFocus || calendarNode.contains(document.activeElement);
 						}
 
-						return triggerNode;
+						return hasFocus;
+					},
+
+					render: function() {
+						var instance = this;
+
+						DateField.superclass.render.apply(instance, arguments);
+
+						var mask = instance.get('mask');
+						mask = mask.replace('%d', '99');
+						mask = mask.replace('%m', '99');
+						mask = mask.replace('%Y', '9999');
+
+						var alias = instance.get('mask');
+						alias = alias.replace('%d', 'dd');
+						alias = alias.replace('%m', 'mm');
+						alias = alias.replace('%Y', 'yyyy');
+
+						var inputMask = new DDMDate.Inputmask(mask, {
+							alias: alias
+						});
+
+						inputMask.mask(instance.getTriggerNode().getDOM());
+
+						var qualifiedName = instance.getQualifiedName().replace(/\$/ig, '\\$');
+
+						instance.datePicker = new A.DatePicker(
+							{
+								after: {
+									selectionChange: A.bind('_afterSelectionChange', instance)
+								},
+								calendar: {
+									on: {
+										// focusedChange: A.bind('_onCalendarFocusedChange', instance)
+									}
+								},
+								mask: instance.get('mask'),
+								popover: {
+									zIndex: Liferay.zIndex.TOOLTIP
+								},
+								trigger: '[data-fieldname=' + qualifiedName + '] .form-control'
+							}
+						);
+
+						return instance;
 					},
 
 					setValue: function(isoDate) {
@@ -135,31 +179,35 @@ AUI.add(
 
 						var triggerNode = instance.getTriggerNode();
 
-						if (datePicker.get('activeInput') === triggerNode) {
-							var date = event.newSelection;
+						var date = event.newSelection;
 
-							if (isArray(date) && date.length) {
-								date = date[0];
-							}
-
-							instance.setValue(instance.getISODate(date));
-
-							instance.validate();
+						if (isArray(date) && date.length) {
+							date = date[0];
 						}
+
+						instance.setValue(instance.getISODate(date));
+
+						instance.validate();
+
+						instance._fireStartedFillingEvent();
 					},
 
-					_onActiveInputChange: function(event) {
+					_onCalendarFocusedChange: function(event) {
 						var instance = this;
 
-						var triggerNode = instance.getTriggerNode();
+						event.preventDefault();
 
-						if (event.newVal === triggerNode) {
-							datePicker.set('mask', instance.get('mask'));
+						if (event.newVal) {
+							var triggerNode = instance.getTriggerNode();
+
+							triggerNode.focus();
 						}
 					},
 
 					_onClickCalendar: function() {
 						var instance = this;
+
+						var datePicker = instance.datePicker;
 
 						instance.getTriggerNode().focus();
 

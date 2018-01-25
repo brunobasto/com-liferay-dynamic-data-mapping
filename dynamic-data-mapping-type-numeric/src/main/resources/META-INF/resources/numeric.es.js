@@ -1,5 +1,6 @@
 import Component from 'metal-component';
 import Soy from 'metal-soy';
+import Inputmask from "inputmask";
 
 import templates from './numeric.soy';
 
@@ -18,5 +19,6 @@ if (!window.DDMNumeric) {
 }
 
 window.DDMNumeric.render = Numeric;
+window.DDMNumeric.Inputmask = Inputmask;
 
 export default Numeric;
