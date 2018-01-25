@@ -49,6 +49,7 @@ import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.template.URLTemplateResource;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -415,7 +416,8 @@ public class DDMFormEmailNotificationSender {
 		return LanguageUtil.get(resourceBundle, "someone");
 	}
 
-	protected String getViewFormEntriesURL(DDMFormInstance ddmFormInstance)
+	protected String getViewFormEntriesURL(
+			DDMFormInstance ddmFormInstance, ThemeDisplay themeDisplay)
 		throws PortalException {
 
 		Map<String, String[]> params = new HashMap<>();
@@ -430,14 +432,15 @@ public class DDMFormEmailNotificationSender {
 			portletNamespace.concat("formInstanceId"),
 			new String[] {String.valueOf(ddmFormInstance.getFormInstanceId())});
 
-		return _portal.getControlPanelFullURL(
-			ddmFormInstance.getGroupId(),
-			DDMFormPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN, params);
+		return _portal.getSiteAdminURL(
+			themeDisplay, DDMFormPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN,
+			params);
 	}
 
 	protected String getViewFormURL(
 			DDMFormInstance ddmFormInstance,
-			DDMFormInstanceRecord ddmFormInstanceRecord)
+			DDMFormInstanceRecord ddmFormInstanceRecord,
+			ThemeDisplay themeDisplay)
 		throws PortalException {
 
 		Map<String, String[]> params = new HashMap<>();
@@ -457,9 +460,9 @@ public class DDMFormEmailNotificationSender {
 			portletNamespace.concat("formInstanceId"),
 			new String[] {String.valueOf(ddmFormInstance.getFormInstanceId())});
 
-		return _portal.getControlPanelFullURL(
-			ddmFormInstance.getGroupId(),
-			DDMFormPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN, params);
+		return _portal.getSiteAdminURL(
+			themeDisplay, DDMFormPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN,
+			params);
 	}
 
 	protected void populateParameters(
@@ -476,11 +479,16 @@ public class DDMFormEmailNotificationSender {
 		template.put(
 			"siteName", getSiteName(ddmFormInstance.getGroupId(), locale));
 		template.put("userName", getUserName(ddmFormInstanceRecord, locale));
+
+		ThemeDisplay themeDisplay = getThemeDisplay(portletRequest);
+
 		template.put(
-			"viewFormEntriesURL", getViewFormEntriesURL(ddmFormInstance));
+			"viewFormEntriesURL",
+			getViewFormEntriesURL(ddmFormInstance, themeDisplay));
 		template.put(
 			"viewFormURL",
-			getViewFormURL(ddmFormInstance, ddmFormInstanceRecord));
+			getViewFormURL(
+				ddmFormInstance, ddmFormInstanceRecord, themeDisplay));
 	}
 
 	protected String render(Template template) throws TemplateException {
@@ -504,7 +512,8 @@ public class DDMFormEmailNotificationSender {
 			_ddmFormFieldTypeServicesTracker.getDDMFormFieldValueRenderer(
 				ddmFormFieldValue.getType());
 
-		return ddmFormFieldValueRenderer.render(ddmFormFieldValue, locale);
+		return HtmlUtil.unescape(
+			ddmFormFieldValueRenderer.render(ddmFormFieldValue, locale));
 	}
 
 	@Reference(unbind = "-")
@@ -524,11 +533,10 @@ public class DDMFormEmailNotificationSender {
 		_userLocalService = userLocalService;
 	}
 
-	private static final String _NAMESPACE = "form.form_instance_record";
+	private static final String _NAMESPACE = "form.form_entry";
 
 	private static final String _TEMPLATE_PATH =
-		"/META-INF/resources/notification" +
-			"/form_instance_record_entry_add_body.soy";
+		"/META-INF/resources/notification/form_entry_add_body.soy";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DDMFormEmailNotificationSender.class);
